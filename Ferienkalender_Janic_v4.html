@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+<html lang="de-CH">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ferienkalender · Janic</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #FAF6F0;
+    --bg-soft: #F3ECE2;
+    --surface: #FFFFFF;
+    --surface-soft: #FCFAF6;
+
+    --sage: #8B9A82;
+    --sage-deep: #6E7D66;
+    --sage-tint: #E4EADF;
+
+    --rose: #C79A98;
+    --rose-deep: #AC7D7B;
+    --rose-tint: #F3E3E1;
+
+    --sand: #C9A874;
+    --sand-deep: #A98A56;
+    --sand-tint: #F0E4CD;
+
+    --slate: #6F84A0;
+    --slate-deep: #56697F;
+    --slate-tint: #E1E7EE;
+
+    --ink: #3A362F;
+    --ink-soft: #6B665C;
+    --ink-faint: #A39C8E;
+    --line: rgba(58,54,47,0.09);
+    --shadow-sm: 0 1px 2px rgba(58,54,47,0.06);
+    --shadow-md: 0 8px 24px -8px rgba(58,54,47,0.16);
+    --shadow-lg: 0 24px 60px -16px rgba(58,54,47,0.24);
+
+    --ease: cubic-bezier(.4,0,.2,1);
+    --radius-lg: 22px;
+    --radius-md: 14px;
+    --radius-sm: 9px;
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(1200px 600px at 8% -10%, var(--rose-tint) 0%, transparent 55%),
+      radial-gradient(1000px 700px at 100% 0%, var(--sage-tint) 0%, transparent 50%),
+      var(--bg);
+    color:var(--ink);
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+
+  h1,h2,h3, .display{
+    font-family:'Fraunces',Georgia,serif;
+    font-weight:500;
+    letter-spacing:-0.01em;
+    color:var(--ink);
+    margin:0;
+  }
+
+  .app{
+    max-width:1080px;
+    margin:0 auto;
+    padding:48px 28px 120px;
+  }
+
+  /* ---------- Topbar ---------- */
+  .topbar{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:24px;
+    margin-bottom:44px;
+  }
+  .topbar .eyebrow{
+    font-size:12.5px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--sage-deep);
+    font-weight:600;
+    margin-bottom:8px;
+  }
+  .topbar h1{font-size:34px;}
+  .topbar .sub{
+    color:var(--ink-soft);
+    font-size:14.5px;
+    margin-top:6px;
+  }
+  .topbar-actions{
+    display:flex;
+    gap:10px;
+    flex-shrink:0;
+    padding-top:4px;
+  }
+
+  .icon-btn{
+    width:42px;height:42px;
+    border-radius:50%;
+    border:1px solid var(--line);
+    background:var(--surface);
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;
+    box-shadow:var(--shadow-sm);
+    transition:transform 220ms var(--ease), box-shadow 220ms var(--ease), border-color 220ms var(--ease);
+    color:var(--ink-soft);
+  }
+  .icon-btn:hover{transform:translateY(-2px); box-shadow:var(--shadow-md); border-color:transparent; color:var(--ink);}
+  .icon-btn svg{width:18px;height:18px;}
+
+  /* ---------- Buttons ---------- */
+  .btn{
+    font-family:inherit;
+    font-size:14px;
+    font-weight:600;
+    border-radius:999px;
+    padding:11px 20px;
+    border:1px solid transparent;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    transition:transform 220ms var(--ease), box-shadow 220ms var(--ease), background 220ms var(--ease), border-color 220ms var(--ease), color 220ms var(--ease);
+    white-space:nowrap;
+  }
+  .btn svg{width:15px;height:15px;}
+  .btn-primary{
+    background:var(--sage-deep);
+    color:#fff;
+    box-shadow:0 6px 16px -4px rgba(110,125,102,0.45);
+  }
+  .btn-primary:hover{transform:translateY(-2px); box-shadow:0 10px 22px -4px rgba(110,125,102,0.5);}
+  .btn-ghost{
+    background:var(--surface);
+    color:var(--ink-soft);
+    border-color:var(--line);
+  }
+  .btn-ghost:hover{border-color:var(--sage-deep); color:var(--sage-deep); transform:translateY(-2px);}
+  .btn-text{
+    background:transparent;
+    color:var(--ink-soft);
+    padding:11px 14px;
+  }
+  .btn-text:hover{color:var(--ink);}
+  .btn-danger-text{ color:var(--rose-deep); background:transparent; padding:8px 10px; font-size:13px;}
+  .btn-danger-text:hover{ text-decoration:underline; }
+  .btn:disabled{opacity:0.45; cursor:not-allowed; transform:none !important;}
+
+  /* ---------- Stat grid ---------- */
+  .stats-grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:16px;
+    margin-bottom:40px;
+  }
+  .stat-card{
+    background:var(--surface);
+    border-radius:var(--radius-lg);
+    padding:22px 22px 20px;
+    box-shadow:var(--shadow-sm);
+    border:1px solid var(--line);
+    transition:transform 260ms var(--ease), box-shadow 260ms var(--ease);
+    position:relative;
+    overflow:hidden;
+  }
+  .stat-card:hover{transform:translateY(-3px); box-shadow:var(--shadow-md);}
+  .stat-card::before{
+    content:'';
+    position:absolute; top:0; left:0; right:0; height:3px;
+    background:var(--accent, var(--sage));
+  }
+  .stat-card.c-sage{--accent:var(--sage);}
+  .stat-card.c-rose{--accent:var(--rose);}
+  .stat-card.c-sand{--accent:var(--sand);}
+  .stat-card.c-slate{--accent:var(--slate);}
+  .stat-label{
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    color:var(--ink-soft);
+    font-weight:600;
+    margin-bottom:10px;
+  }
+  .stat-value{
+    font-family:'Fraunces',serif;
+    font-size:30px;
+    font-weight:500;
+    line-height:1.1;
+  }
+  .stat-value small{font-size:15px; font-weight:400; color:var(--ink-soft);}
+  .stat-foot{font-size:12.5px; color:var(--ink-soft); margin-top:6px;}
+
+  /* ---------- Panels ---------- */
+  .panel{
+    background:var(--surface);
+    border-radius:var(--radius-lg);
+    border:1px solid var(--line);
+    box-shadow:var(--shadow-sm);
+    padding:28px 28px 24px;
+    margin-bottom:24px;
+  }
+  .panel-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    flex-wrap:wrap;
+    margin-bottom:20px;
+  }
+  .panel-header h2{font-size:20px;}
+  .panel-header .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
+
+  select, input[type=text], input[type=number], input[type=date], input[type=password], textarea{
+    font-family:inherit;
+    font-size:14px;
+    color:var(--ink);
+    background:var(--surface-soft);
+    border:1px solid var(--line);
+    border-radius:var(--radius-sm);
+    padding:10px 12px;
+    outline:none;
+    transition:border-color 200ms var(--ease), box-shadow 200ms var(--ease), background 200ms var(--ease);
+  }
+  select:focus, input:focus, textarea:focus{
+    border-color:var(--sage-deep);
+    box-shadow:0 0 0 3px rgba(139,154,130,0.18);
+    background:#fff;
+  }
+  select{cursor:pointer;}
+  textarea{resize:vertical; min-height:70px; font-family:inherit;}
+
+  /* ---------- Entries list ---------- */
+  .entry-row{
+    display:grid;
+    grid-template-columns:auto 1fr auto auto auto;
+    align-items:center;
+    gap:18px;
+    padding:16px 6px;
+    border-bottom:1px solid var(--line);
+    transition:background 200ms var(--ease);
+  }
+  .entry-row:last-child{border-bottom:none;}
+  .entry-row:hover{background:var(--surface-soft);}
+  .entry-dot{
+    width:10px;height:10px;border-radius:50%;
+    background:var(--dot, var(--sage));
+  }
+  .entry-main .title{font-weight:600; font-size:15px;}
+  .entry-main .loc{font-size:13px; color:var(--ink-soft); margin-top:2px;}
+  .entry-dates{font-size:13.5px; color:var(--ink-soft); text-align:right; white-space:nowrap;}
+  .entry-workdays{
+    font-size:13px; font-weight:600;
+    background:var(--sage-tint); color:var(--sage-deep);
+    padding:5px 11px; border-radius:999px; white-space:nowrap;
+  }
+  .entry-actions{display:flex; gap:4px;}
+  .entry-actions button{
+    width:32px;height:32px;
+    border-radius:50%;
+    border:none;background:transparent;
+    color:var(--ink-faint);
+    cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    transition:background 200ms var(--ease), color 200ms var(--ease);
+  }
+  .entry-actions button:hover{background:var(--bg-soft); color:var(--ink);}
+  .entry-actions button.del:hover{color:var(--rose-deep);}
+  .entry-actions svg{width:15px;height:15px;}
+
+  .badge{
+    font-size:11.5px;
+    font-weight:600;
+    padding:4px 10px;
+    border-radius:999px;
+    text-transform:uppercase;
+    letter-spacing:0.03em;
+  }
+  .badge-ferien{background:var(--sage-tint); color:var(--sage-deep);}
+  .badge-krankheit{background:var(--rose-tint); color:var(--rose-deep);}
+  .badge-sonstiges{background:var(--sand-tint); color:var(--sand-deep);}
+
+  .empty-state{
+    text-align:center;
+    padding:44px 20px;
+    color:var(--ink-soft);
+  }
+  .empty-state .glyph{font-size:28px; margin-bottom:10px; opacity:0.6;}
+  .empty-state p{margin:4px 0 0; font-size:14px;}
+
+  /* ---------- Holidays ---------- */
+  .holiday-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(210px,1fr));
+    gap:10px;
+  }
+  .holiday-chip{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:12px 14px;
+    border-radius:var(--radius-md);
+    background:var(--surface-soft);
+    border:1px solid var(--line);
+    transition:transform 200ms var(--ease), box-shadow 200ms var(--ease);
+  }
+  .holiday-chip:hover{transform:translateY(-2px); box-shadow:var(--shadow-sm);}
+  .holiday-chip .date{
+    font-family:'Fraunces',serif;
+    font-size:13px;
+    font-weight:600;
+    color:var(--slate-deep);
+    background:var(--slate-tint);
+    border-radius:8px;
+    padding:6px 8px;
+    text-align:center;
+    line-height:1.15;
+    min-width:44px;
+  }
+  .holiday-chip .date b{display:block; font-size:16px;}
+  .holiday-chip .name{font-size:13.5px; font-weight:500;}
+  .holiday-chip .wd{font-size:11.5px; color:var(--ink-soft); margin-top:1px;}
+  .holiday-note{font-size:12px; color:var(--ink-faint); margin-top:14px; line-height:1.5;}
+
+  footer.app-footer{
+    text-align:center;
+    color:var(--ink-faint);
+    font-size:12.5px;
+    margin-top:36px;
+    letter-spacing:0.02em;
+  }
+
+  /* ---------- Modal ---------- */
+  .modal-backdrop{
+    position:fixed; inset:0;
+    background:rgba(58,54,47,0.28);
+    backdrop-filter:blur(3px);
+    display:flex; align-items:center; justify-content:center;
+    padding:20px;
+    z-index:100;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity 260ms var(--ease);
+  }
+  .modal-backdrop.open{opacity:1; pointer-events:auto;}
+  .modal{
+    background:var(--surface);
+    border-radius:var(--radius-lg);
+    box-shadow:var(--shadow-lg);
+    width:100%;
+    max-width:480px;
+    max-height:88vh;
+    overflow-y:auto;
+    padding:28px;
+    transform:translateY(14px) scale(0.98);
+    opacity:0;
+    transition:transform 300ms var(--ease), opacity 300ms var(--ease);
+  }
+  .modal-backdrop.open .modal{transform:translateY(0) scale(1); opacity:1;}
+  .modal-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:22px;}
+  .modal-header h2{font-size:19px;}
+  .field{margin-bottom:16px; display:flex; flex-direction:column; gap:6px;}
+  .field label{font-size:12.5px; font-weight:600; color:var(--ink-soft);}
+  .field-row{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .workdays-preview{
+    background:var(--sage-tint);
+    color:var(--sage-deep);
+    border-radius:var(--radius-sm);
+    padding:12px 14px;
+    font-size:13.5px;
+    font-weight:600;
+    display:flex; justify-content:space-between; align-items:center;
+    margin-bottom:18px;
+  }
+  .modal-actions{display:flex; justify-content:flex-end; gap:10px; margin-top:6px;}
+  .helptext{font-size:12px; color:var(--ink-faint); line-height:1.5;}
+
+  /* ---------- Chat ---------- */
+  .chat-toggle{
+    position:fixed;
+    right:28px; bottom:28px;
+    width:58px;height:58px;
+    border-radius:50%;
+    background:var(--ink);
+    color:#fff;
+    border:none;
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;
+    box-shadow:0 12px 28px -6px rgba(58,54,47,0.4);
+    transition:transform 260ms var(--ease), box-shadow 260ms var(--ease);
+    z-index:90;
+  }
+  .chat-toggle:hover{transform:translateY(-3px) scale(1.03);}
+  .chat-toggle svg{width:24px;height:24px;}
+
+  .chat-panel{
+    position:fixed;
+    right:28px; bottom:100px;
+    width:380px;
+    max-width:calc(100vw - 40px);
+    height:520px;
+    max-height:calc(100vh - 150px);
+    background:var(--surface);
+    border-radius:var(--radius-lg);
+    box-shadow:var(--shadow-lg);
+    border:1px solid var(--line);
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    z-index:91;
+    transform:translateY(16px) scale(0.97);
+    opacity:0;
+    pointer-events:none;
+    transition:transform 280ms var(--ease), opacity 280ms var(--ease);
+  }
+  .chat-panel.open{transform:translateY(0) scale(1); opacity:1; pointer-events:auto;}
+  .chat-head{
+    padding:16px 18px;
+    border-bottom:1px solid var(--line);
+    display:flex; align-items:center; justify-content:space-between;
+    background:var(--surface-soft);
+  }
+  .chat-head .title{font-family:'Fraunces',serif; font-size:15.5px; font-weight:500;}
+  .chat-head .status{font-size:11.5px; color:var(--sage-deep); display:flex; align-items:center; gap:5px; margin-top:2px;}
+  .chat-head .status .d{width:6px;height:6px;border-radius:50%; background:var(--sage-deep);}
+  .chat-messages{
+    flex:1;
+    overflow-y:auto;
+    padding:16px 18px;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+  .msg{
+    max-width:85%;
+    padding:10px 14px;
+    border-radius:16px;
+    font-size:13.5px;
+    line-height:1.5;
+    white-space:pre-wrap;
+  }
+  .msg.user{
+    align-self:flex-end;
+    background:var(--ink);
+    color:#fff;
+    border-bottom-right-radius:5px;
+  }
+  .msg.assistant{
+    align-self:flex-start;
+    background:var(--sage-tint);
+    color:var(--ink);
+    border-bottom-left-radius:5px;
+  }
+  .msg.system-note{
+    align-self:center;
+    background:transparent;
+    color:var(--ink-faint);
+    font-size:12px;
+    text-align:center;
+    max-width:100%;
+  }
+  .chat-input-row{
+    display:flex;
+    gap:8px;
+    padding:14px;
+    border-top:1px solid var(--line);
+    background:var(--surface-soft);
+  }
+  .chat-input-row textarea{
+    flex:1;
+    min-height:40px;
+    max-height:100px;
+    resize:none;
+    border-radius:20px;
+    padding:10px 16px;
+  }
+  .chat-send{
+    width:40px;height:40px;
+    border-radius:50%;
+    background:var(--sage-deep);
+    color:#fff;
+    border:none;
+    flex-shrink:0;
+    cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    transition:transform 200ms var(--ease), opacity 200ms var(--ease);
+  }
+  .chat-send:hover{transform:scale(1.06);}
+  .chat-send:disabled{opacity:0.4; cursor:not-allowed; transform:none;}
+  .chat-send svg{width:16px;height:16px;}
+
+  .typing-dots{display:inline-flex; gap:3px; align-items:center; padding:2px 4px;}
+  .typing-dots span{width:5px;height:5px;border-radius:50%;background:var(--sage-deep); animation:blink 1.2s infinite ease-in-out;}
+  .typing-dots span:nth-child(2){animation-delay:0.2s;}
+  .typing-dots span:nth-child(3){animation-delay:0.4s;}
+  @keyframes blink{0%,80%,100%{opacity:0.25;} 40%{opacity:1;}}
+
+  .toast{
+    position:fixed; left:50%; bottom:28px; transform:translateX(-50%) translateY(20px);
+    background:var(--ink); color:#fff;
+    padding:12px 20px; border-radius:999px;
+    font-size:13.5px; font-weight:500;
+    box-shadow:var(--shadow-lg);
+    opacity:0; pointer-events:none;
+    transition:opacity 260ms var(--ease), transform 260ms var(--ease);
+    z-index:200;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  @media (max-width:760px){
+    .stats-grid{grid-template-columns:repeat(2,1fr);}
+    .app{padding:32px 16px 120px;}
+    .entry-row{grid-template-columns:auto 1fr; row-gap:8px;}
+    .entry-dates, .entry-workdays{grid-column:2 / 3;}
+    .entry-actions{grid-column:2/3;}
+    .chat-panel{right:12px; left:12px; width:auto;}
+    .chat-toggle{right:20px; bottom:20px;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <div>
+      <div class="eyebrow">Kanton Uri · Lehrling</div>
+      <h1>Ferienkalender</h1>
+      <div class="sub">Janic — Übersicht über Ferien, Saldo &amp; Feiertage</div>
+    </div>
+    <div class="topbar-actions">
+      <button class="icon-btn" id="btnExportIcs" title="Als .ics exportieren">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 19h14"/></svg>
+      </button>
+      <button class="icon-btn" id="btnSettings" title="Einstellungen">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card c-sage">
+      <div class="stat-label">Anspruch <span id="statYearA"></span></div>
+      <div class="stat-value" id="statAnspruch">–</div>
+      <div class="stat-foot" id="statAnspruchFoot">&nbsp;</div>
+    </div>
+    <div class="stat-card c-rose">
+      <div class="stat-label">Bezogen</div>
+      <div class="stat-value" id="statVerwendet">–</div>
+      <div class="stat-foot" id="statVerwendetFoot">&nbsp;</div>
+    </div>
+    <div class="stat-card c-slate">
+      <div class="stat-label">Saldo</div>
+      <div class="stat-value" id="statSaldo">–</div>
+      <div class="stat-foot">Verbleibende Ferientage</div>
+    </div>
+    <div class="stat-card c-sand">
+      <div class="stat-label">Nächste Ferien</div>
+      <div class="stat-value" id="statNext" style="font-size:19px;">–</div>
+      <div class="stat-foot" id="statNextFoot">&nbsp;</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <h2>Meine Einträge</h2>
+      <div class="row">
+        <select id="yearFilter"></select>
+        <button class="btn btn-primary" id="btnAddEntry">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          Neuer Eintrag
+        </button>
+      </div>
+    </div>
+    <div id="entriesList"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <h2>Feiertage Kanton Uri</h2>
+      <div class="row">
+        <select id="holidayYear"></select>
+      </div>
+    </div>
+    <div class="holiday-grid" id="holidayList"></div>
+    <div class="holiday-note">Gesetzliche Feiertage des Kantons Uri (inkl. beweglicher Feiertage). Bitte bei wichtigen Planungen zusätzlich mit dem Lehrbetrieb abgleichen.</div>
+  </div>
+
+  <footer class="app-footer">Ferienkalender · Janic · privat &amp; lokal gespeichert im Browser</footer>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal-backdrop" id="settingsBackdrop">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Einstellungen</h2>
+      <button class="icon-btn" id="closeSettings" style="width:34px;height:34px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="field">
+      <label>Jährlicher Anspruch (Tage)</label>
+      <input type="number" id="settingAnspruch" min="0" step="0.5">
+    </div>
+    <div class="field">
+      <label>Übertrag aus Vorjahr (Tage)</label>
+      <input type="number" id="settingCarryover" step="0.5">
+    </div>
+    <div class="field">
+      <label>Claude API-Schlüssel (für KI-Chat)</label>
+      <input type="password" id="settingApiKey" placeholder="sk-ant-...">
+      <div class="helptext">Wird nur lokal in deinem Browser gespeichert (localStorage) und ausschliesslich für Anfragen an die Anthropic API verwendet.</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-text" id="cancelSettings">Abbrechen</button>
+      <button class="btn btn-primary" id="saveSettings">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- Entry Modal -->
+<div class="modal-backdrop" id="entryBackdrop">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="entryModalTitle">Neuer Eintrag</h2>
+      <button class="icon-btn" id="closeEntry" style="width:34px;height:34px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <input type="hidden" id="entryId">
+    <div class="field">
+      <label>Titel</label>
+      <input type="text" id="entryTitle" placeholder="z. B. Sommerferien">
+    </div>
+    <div class="field">
+      <label>Ort (optional)</label>
+      <input type="text" id="entryLocation" placeholder="z. B. Lissabon">
+    </div>
+    <div class="field">
+      <label>Typ</label>
+      <select id="entryType">
+        <option value="Ferien">Ferien</option>
+        <option value="Krankheit">Krankheit</option>
+        <option value="Sonstiges">Sonstiges</option>
+      </select>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Von</label>
+        <input type="date" id="entryStart">
+      </div>
+      <div class="field">
+        <label>Bis</label>
+        <input type="date" id="entryEnd">
+      </div>
+    </div>
+    <div class="workdays-preview">
+      <span>Arbeitstage</span>
+      <span id="workdaysPreview">0</span>
+    </div>
+    <div class="field">
+      <label>Notiz (optional)</label>
+      <textarea id="entryNote" placeholder="Details, Flugzeiten, etc."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-danger-text" id="deleteEntryBtn" style="display:none; margin-right:auto;">Eintrag löschen</button>
+      <button class="btn btn-text" id="cancelEntry">Abbrechen</button>
+      <button class="btn btn-primary" id="saveEntry">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- Chat -->
+<button class="chat-toggle" id="chatToggle" title="KI-Chat öffnen">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+</button>
+
+<div class="chat-panel" id="chatPanel">
+  <div class="chat-head">
+    <div>
+      <div class="title">Ferien-Assistent</div>
+      <div class="status"><span class="d"></span> Claude Sonnet 4.6</div>
+    </div>
+    <button class="icon-btn" id="closeChat" style="width:32px;height:32px;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+  <div class="chat-messages" id="chatMessages"></div>
+  <div class="chat-input-row">
+    <textarea id="chatInput" placeholder="Frag z. B. «Wie viele Ferientage habe ich noch?»" rows="1"></textarea>
+    <button class="chat-send" id="chatSend">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+    </button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------------- Storage ---------------- */
+  const LS_ENTRIES = 'jfk_entries_v1';
+  const LS_SETTINGS = 'jfk_settings_v1';
+  const LS_CHAT = 'jfk_chat_v1';
+
+  const defaultSettings = { anspruch: 25, carryover: 0, apiKey: '' };
+
+  function loadEntries(){
+    try{ return JSON.parse(localStorage.getItem(LS_ENTRIES)) || []; }catch(e){ return []; }
+  }
+  function saveEntries(list){ localStorage.setItem(LS_ENTRIES, JSON.stringify(list)); }
+
+  function loadSettings(){
+    try{ return Object.assign({}, defaultSettings, JSON.parse(localStorage.getItem(LS_SETTINGS)) || {}); }
+    catch(e){ return Object.assign({}, defaultSettings); }
+  }
+  function saveSettings(s){ localStorage.setItem(LS_SETTINGS, JSON.stringify(s)); }
+
+  function loadChat(){
+    try{ return JSON.parse(localStorage.getItem(LS_CHAT)) || []; }catch(e){ return []; }
+  }
+  function saveChat(list){ localStorage.setItem(LS_CHAT, JSON.stringify(list)); }
+
+  let entries = loadEntries();
+  let settings = loadSettings();
+  let chatHistory = loadChat();
+  let selectedYear = new Date().getFullYear();
+
+  /* ---------------- Date helpers ---------------- */
+  function toISO(d){
+    const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
+    return `${y}-${m}-${day}`;
+  }
+  function parseISO(s){ const [y,m,d]=s.split('-').map(Number); return new Date(y, m-1, d); }
+  function fmtShort(d){
+    return d.toLocaleDateString('de-CH', { day:'2-digit', month:'2-digit', year:'numeric' });
+  }
+  function fmtRange(startISO, endISO){
+    const s = parseISO(startISO), e = parseISO(endISO);
+    if (startISO === endISO) return fmtShort(s);
+    const sameYear = s.getFullYear() === e.getFullYear();
+    const sameMonth = sameYear && s.getMonth() === e.getMonth();
+    const sOpts = sameMonth ? {day:'2-digit'} : sameYear ? {day:'2-digit', month:'2-digit'} : {day:'2-digit', month:'2-digit', year:'numeric'};
+    return `${s.toLocaleDateString('de-CH', sOpts)} – ${fmtShort(e)}`;
+  }
+
+  function easterSunday(year){
+    const a = year % 19, b = Math.floor(year/100), c = year % 100;
+    const d = Math.floor(b/4), e = b % 4, f = Math.floor((b+8)/25);
+    const g = Math.floor((b-f+1)/3), h = (19*a + b - d - g + 15) % 30;
+    const i = Math.floor(c/4), k = c % 4, l = (32 + 2*e + 2*i - h - k) % 7;
+    const m = Math.floor((a + 11*h + 22*l)/451);
+    const month = Math.floor((h + l - 7*m + 114)/31);
+    const day = ((h + l - 7*m + 114) % 31) + 1;
+    return new Date(year, month-1, day);
+  }
+  function addDays(date, n){ const d = new Date(date); d.setDate(d.getDate()+n); return d; }
+
+  function getFeiertageUri(year){
+    const easter = easterSunday(year);
+    const list = [
+      { date: new Date(year,0,1), name: 'Neujahr' },
+      { date: new Date(year,0,2), name: 'Berchtoldstag' },
+      { date: new Date(year,2,19), name: 'St. Josef' },
+      { date: addDays(easter,-2), name: 'Karfreitag' },
+      { date: addDays(easter,1), name: 'Ostermontag' },
+      { date: addDays(easter,39), name: 'Auffahrt' },
+      { date: addDays(easter,50), name: 'Pfingstmontag' },
+      { date: addDays(easter,60), name: 'Fronleichnam' },
+      { date: new Date(year,7,1), name: 'Bundesfeier' },
+      { date: new Date(year,7,15), name: 'Mariä Himmelfahrt' },
+      { date: new Date(year,10,1), name: 'Allerheiligen' },
+      { date: new Date(year,11,8), name: 'Mariä Empfängnis' },
+      { date: new Date(year,11,25), name: 'Weihnachten' },
+      { date: new Date(year,11,26), name: 'Stephanstag' },
+    ];
+    return list.sort((a,b)=>a.date-b.date);
+  }
+
+  function holidaySetForYears(years){
+    const set = new Set();
+    years.forEach(y => getFeiertageUri(y).forEach(h => set.add(toISO(h.date))));
+    return set;
+  }
+
+  function countWorkdays(startISO, endISO, holidaySet){
+    if (!startISO || !endISO) return 0;
+    let start = parseISO(startISO), end = parseISO(endISO);
+    if (end < start) return 0;
+    let count = 0, d = new Date(start);
+    while (d <= end){
+      const day = d.getDay();
+      if (day !== 0 && day !== 6 && !holidaySet.has(toISO(d))) count++;
+      d.setDate(d.getDate()+1);
+    }
+    return count;
+  }
+
+  /* ---------------- Rendering ---------------- */
+  const $ = id => document.getElementById(id);
+
+  function yearsInUse(){
+    const now = new Date().getFullYear();
+    const set = new Set([now-1, now, now+1, now+2]);
+    entries.forEach(e => set.add(parseISO(e.start).getFullYear()));
+    return Array.from(set).sort((a,b)=>a-b);
+  }
+
+  function populateYearSelects(){
+    const years = yearsInUse();
+    const now = new Date().getFullYear();
+    if (!years.includes(selectedYear)) selectedYear = now;
+
+    for (const sel of [$('yearFilter'), $('holidayYear')]){
+      const prev = sel.id === 'yearFilter' ? selectedYear : (Number(sel.value) || selectedYear);
+      sel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+      sel.value = prev;
+    }
+  }
+
+  function renderStats(){
+    const holSet = holidaySetForYears([selectedYear]);
+    const yearEntries = entries.filter(e => parseISO(e.start).getFullYear() === selectedYear);
+    const verwendet = yearEntries
+      .filter(e => e.type === 'Ferien')
+      .reduce((sum,e) => sum + countWorkdays(e.start, e.end, holSet), 0);
+    const anspruch = Number(settings.anspruch) || 0;
+    const carryover = Number(settings.carryover) || 0;
+    const totalAnspruch = anspruch + carryover;
+    const saldo = totalAnspruch - verwendet;
+
+    $('statYearA').textContent = `· ${selectedYear}`;
+    $('statAnspruch').innerHTML = `${totalAnspruch}<small> Tage</small>`;
+    $('statAnspruchFoot').textContent = carryover ? `${anspruch} + ${carryover} Übertrag` : 'Jahresanspruch';
+    $('statVerwendet').innerHTML = `${verwendet}<small> Tage</small>`;
+    $('statVerwendetFoot').textContent = `${yearEntries.filter(e=>e.type==='Ferien').length} Ferien-Einträge`;
+    $('statSaldo').innerHTML = `${saldo}<small> Tage</small>`;
+    $('statSaldo').parentElement.style.setProperty('--accent', saldo < 0 ? 'var(--rose)' : 'var(--slate)');
+
+    const today = toISO(new Date());
+    const upcoming = entries
+      .filter(e => e.type === 'Ferien' && e.end >= today)
+      .sort((a,b) => a.start.localeCompare(b.start))[0];
+    if (upcoming){
+      $('statNext').textContent = upcoming.title;
+      const days = Math.max(0, Math.ceil((parseISO(upcoming.start) - new Date(today)) / 86400000));
+      $('statNextFoot').textContent = upcoming.start === today ? 'startet heute' : `in ${days} Tag${days===1?'':'en'} · ${fmtRange(upcoming.start, upcoming.end)}`;
+    } else {
+      $('statNext').textContent = 'Keine geplant';
+      $('statNextFoot').textContent = 'Noch nichts eingetragen';
+    }
+  }
+
+  const typeBadge = { Ferien: 'badge-ferien', Krankheit: 'badge-krankheit', Sonstiges: 'badge-sonstiges' };
+  const typeDot = { Ferien: 'var(--sage)', Krankheit: 'var(--rose)', Sonstiges: 'var(--sand)' };
+
+  function renderEntries(){
+    const holSet = holidaySetForYears([selectedYear-1, selectedYear, selectedYear+1]);
+    const list = entries
+      .filter(e => parseISO(e.start).getFullYear() === selectedYear)
+      .sort((a,b) => a.start.localeCompare(b.start));
+
+    const container = $('entriesList');
+    if (list.length === 0){
+      container.innerHTML = `<div class="empty-state">
+        <div class="glyph">◌</div>
+        <p>Noch keine Einträge für ${selectedYear}.</p>
+        <p>Füge deine erste Ferien, z. B. nach Lissabon oder Ayia Napa, hinzu.</p>
+      </div>`;
+      return;
+    }
+
+    container.innerHTML = list.map(e => {
+      const wd = countWorkdays(e.start, e.end, holSet);
+      return `<div class="entry-row" data-id="${e.id}">
+        <div class="entry-dot" style="--dot:${typeDot[e.type]||'var(--sage)'}"></div>
+        <div class="entry-main">
+          <div class="title">${escapeHtml(e.title)} <span class="badge ${typeBadge[e.type]||'badge-sonstiges'}">${e.type}</span></div>
+          <div class="loc">${e.location ? escapeHtml(e.location) : '&nbsp;'}</div>
+        </div>
+        <div class="entry-dates">${fmtRange(e.start, e.end)}</div>
+        <div class="entry-workdays">${wd} AT</div>
+        <div class="entry-actions">
+          <button class="edit" data-action="edit" title="Bearbeiten">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+          </button>
+          <button class="del" data-action="delete" title="Löschen">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg>
+          </button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function renderHolidays(){
+    const y = Number($('holidayYear').value) || selectedYear;
+    const list = getFeiertageUri(y);
+    $('holidayList').innerHTML = list.map(h => {
+      const wd = h.date.toLocaleDateString('de-CH', { weekday:'short' });
+      const isWeekend = h.date.getDay() === 0 || h.date.getDay() === 6;
+      return `<div class="holiday-chip">
+        <div class="date">${wd}<b>${String(h.date.getDate()).padStart(2,'0')}.${String(h.date.getMonth()+1).padStart(2,'0')}</b></div>
+        <div>
+          <div class="name">${h.name}</div>
+          <div class="wd">${isWeekend ? 'fällt auf Wochenende' : 'arbeitsfrei'}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function renderAll(){
+    populateYearSelects();
+    renderStats();
+    renderEntries();
+    renderHolidays();
+  }
+
+  /* ---------------- Toast ---------------- */
+  let toastTimer;
+  function showToast(msg){
+    const t = $('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=>t.classList.remove('show'), 2400);
+  }
+
+  /* ---------------- Year selects ---------------- */
+  $('yearFilter').addEventListener('change', e => { selectedYear = Number(e.target.value); renderAll(); });
+  $('holidayYear').addEventListener('change', renderHolidays);
+
+  /* ---------------- Settings modal ---------------- */
+  function openSettings(){
+    $('settingAnspruch').value = settings.anspruch;
+    $('settingCarryover').value = settings.carryover;
+    $('settingApiKey').value = settings.apiKey;
+    $('settingsBackdrop').classList.add('open');
+  }
+  function closeSettings(){ $('settingsBackdrop').classList.remove('open'); }
+  $('btnSettings').addEventListener('click', openSettings);
+  $('closeSettings').addEventListener('click', closeSettings);
+  $('cancelSettings').addEventListener('click', closeSettings);
+  $('settingsBackdrop').addEventListener('click', e => { if (e.target === $('settingsBackdrop')) closeSettings(); });
+  $('saveSettings').addEventListener('click', () => {
+    settings = {
+      anspruch: Number($('settingAnspruch').value) || 0,
+      carryover: Number($('settingCarryover').value) || 0,
+      apiKey: $('settingApiKey').value.trim(),
+    };
+    saveSettings(settings);
+    closeSettings();
+    renderAll();
+    showToast('Einstellungen gespeichert');
+  });
+
+  /* ---------------- Entry modal ---------------- */
+  const holSetAllRelevant = () => holidaySetForYears([selectedYear-1, selectedYear, selectedYear+1, selectedYear+2]);
+
+  function openEntryModal(entry){
+    $('entryModalTitle').textContent = entry ? 'Eintrag bearbeiten' : 'Neuer Eintrag';
+    $('entryId').value = entry ? entry.id : '';
+    $('entryTitle').value = entry ? entry.title : '';
+    $('entryLocation').value = entry ? entry.location || '' : '';
+    $('entryType').value = entry ? entry.type : 'Ferien';
+    $('entryStart').value = entry ? entry.start : toISO(new Date());
+    $('entryEnd').value = entry ? entry.end : toISO(new Date());
+    $('entryNote').value = entry ? entry.note || '' : '';
+    $('deleteEntryBtn').style.display = entry ? 'inline-flex' : 'none';
+    updateWorkdaysPreview();
+    $('entryBackdrop').classList.add('open');
+    setTimeout(()=>$('entryTitle').focus(), 260);
+  }
+  function closeEntryModal(){ $('entryBackdrop').classList.remove('open'); }
+
+  function updateWorkdaysPreview(){
+    const s = $('entryStart').value, e = $('entryEnd').value;
+    const wd = countWorkdays(s, e, holSetAllRelevant());
+    $('workdaysPreview').textContent = `${wd} Tag${wd===1?'':'e'}`;
+  }
+  $('entryStart').addEventListener('change', () => {
+    if ($('entryEnd').value < $('entryStart').value) $('entryEnd').value = $('entryStart').value;
+    updateWorkdaysPreview();
+  });
+  $('entryEnd').addEventListener('change', updateWorkdaysPreview);
+
+  $('btnAddEntry').addEventListener('click', () => openEntryModal(null));
+  $('closeEntry').addEventListener('click', closeEntryModal);
+  $('cancelEntry').addEventListener('click', closeEntryModal);
+  $('entryBackdrop').addEventListener('click', e => { if (e.target === $('entryBackdrop')) closeEntryModal(); });
+
+  $('saveEntry').addEventListener('click', () => {
+    const title = $('entryTitle').value.trim();
+    const start = $('entryStart').value;
+    const end = $('entryEnd').value;
+    if (!title){ showToast('Bitte einen Titel angeben'); $('entryTitle').focus(); return; }
+    if (!start || !end || end < start){ showToast('Bitte gültigen Zeitraum wählen'); return; }
+
+    const id = $('entryId').value;
+    const data = {
+      id: id || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now())),
+      title,
+      location: $('entryLocation').value.trim(),
+      type: $('entryType').value,
+      start, end,
+      note: $('entryNote').value.trim(),
+    };
+    if (id){
+      entries = entries.map(e => e.id === id ? data : e);
+    } else {
+      entries.push(data);
+    }
+    saveEntries(entries);
+    closeEntryModal();
+    selectedYear = parseISO(start).getFullYear();
+    renderAll();
+    showToast(id ? 'Eintrag aktualisiert' : 'Eintrag hinzugefügt');
+  });
+
+  $('deleteEntryBtn').addEventListener('click', () => {
+    const id = $('entryId').value;
+    if (!id) return;
+    entries = entries.filter(e => e.id !== id);
+    saveEntries(entries);
+    closeEntryModal();
+    renderAll();
+    showToast('Eintrag gelöscht');
+  });
+
+  $('entriesList').addEventListener('click', e => {
+    const btn = e.target.closest('button[data-action]');
+    if (!btn) return;
+    const row = e.target.closest('.entry-row');
+    const id = row.dataset.id;
+    const entry = entries.find(x => x.id === id);
+    if (btn.dataset.action === 'edit'){
+      openEntryModal(entry);
+    } else if (btn.dataset.action === 'delete'){
+      if (confirm(`«${entry.title}» wirklich löschen?`)){
+        entries = entries.filter(x => x.id !== id);
+        saveEntries(entries);
+        renderAll();
+        showToast('Eintrag gelöscht');
+      }
+    }
+  });
+
+  /* ---------------- Keyboard ---------------- */
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape'){ closeEntryModal(); closeSettings(); }
+  });
+
+  /* ---------------- ICS export ---------------- */
+  function pad(n){ return String(n).padStart(2,'0'); }
+  function icsDate(iso){ return iso.replaceAll('-',''); }
+  function icsDatePlusOne(iso){
+    const d = parseISO(iso); d.setDate(d.getDate()+1);
+    return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}`;
+  }
+  function foldLine(line){
+    // simple escape for ICS text
+    return line.replace(/([,;])/g, '\\$1');
+  }
+
+  $('btnExportIcs').addEventListener('click', () => {
+    if (entries.length === 0){ showToast('Keine Einträge zum Exportieren'); return; }
+    const now = new Date();
+    const stamp = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}T${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}Z`;
+    const lines = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Janic//Ferienkalender//DE','CALSCALE:GREGORIAN'];
+    entries.forEach(e => {
+      lines.push('BEGIN:VEVENT');
+      lines.push(`UID:${e.id}@ferienkalender-janic`);
+      lines.push(`DTSTAMP:${stamp}`);
+      lines.push(`DTSTART;VALUE=DATE:${icsDate(e.start)}`);
+      lines.push(`DTEND;VALUE=DATE:${icsDatePlusOne(e.end)}`);
+      lines.push(`SUMMARY:${foldLine(e.title + (e.location ? ' – ' + e.location : ''))}`);
+      if (e.note) lines.push(`DESCRIPTION:${foldLine(e.note)}`);
+      lines.push(`CATEGORIES:${e.type}`);
+      lines.push('END:VEVENT');
+    });
+    lines.push('END:VCALENDAR');
+    const blob = new Blob([lines.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'ferienkalender-janic.ics';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('ICS-Datei exportiert');
+  });
+
+  /* ---------------- Chat ---------------- */
+  const CHAT_MODEL = 'claude-sonnet-4-6';
+  const chatPanel = $('chatPanel');
+  const chatMessages = $('chatMessages');
+  const chatInput = $('chatInput');
+
+  function renderChat(){
+    chatMessages.innerHTML = '';
+    if (chatHistory.length === 0){
+      chatMessages.innerHTML = `<div class="msg system-note">Frag mich etwas zu deinem Ferien-Saldo, Arbeitstagen oder Feiertagen in Uri.</div>`;
+      return;
+    }
+    chatHistory.forEach(m => {
+      const div = document.createElement('div');
+      div.className = 'msg ' + (m.role === 'user' ? 'user' : 'assistant');
+      div.textContent = m.content;
+      chatMessages.appendChild(div);
+    });
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  function openChat(){ chatPanel.classList.add('open'); renderChat(); setTimeout(()=>chatInput.focus(),200); }
+  function closeChat(){ chatPanel.classList.remove('open'); }
+  $('chatToggle').addEventListener('click', () => chatPanel.classList.contains('open') ? closeChat() : openChat());
+  $('closeChat').addEventListener('click', closeChat);
+
+  chatInput.addEventListener('input', () => {
+    chatInput.style.height = 'auto';
+    chatInput.style.height = Math.min(chatInput.scrollHeight, 100) + 'px';
+  });
+  chatInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); sendChatMessage(); }
+  });
+  $('chatSend').addEventListener('click', sendChatMessage);
+
+  function buildSystemPrompt(){
+    const holSet = holidaySetForYears([selectedYear]);
+    const yearEntries = entries.filter(e => parseISO(e.start).getFullYear() === selectedYear);
+    const verwendet = yearEntries.filter(e => e.type === 'Ferien').reduce((s,e)=>s+countWorkdays(e.start,e.end,holSet),0);
+    const anspruch = Number(settings.anspruch)||0, carryover = Number(settings.carryover)||0;
+    const saldo = anspruch + carryover - verwendet;
+    const entriesList = entries.map(e => `- ${e.title}${e.location? ' ('+e.location+')':''}: ${e.start} bis ${e.end}, Typ ${e.type}`).join('\n') || 'Keine Einträge vorhanden.';
+    const holidaysList = getFeiertageUri(selectedYear).map(h => `- ${toISO(h.date)}: ${h.name}`).join('\n');
+    return `Du bist ein freundlicher, präziser Ferien-Assistent für Janic, einen Lehrling im Kanton Uri, Schweiz. Antworte kurz, auf Deutsch (Schweizer Hochdeutsch), duze Janic.
+
+Aktueller Stand für das Jahr ${selectedYear}:
+- Jahresanspruch: ${anspruch} Tage, Übertrag: ${carryover} Tage
+- Bereits bezogen: ${verwendet} Arbeitstage
+- Saldo (verbleibend): ${saldo} Tage
+
+Einträge:
+${entriesList}
+
+Gesetzliche Feiertage Kanton Uri ${selectedYear}:
+${holidaysList}
+
+Nutze diese Daten für Berechnungen und Auskünfte. Rechne bei Bedarf Arbeitstage selbst nach (Mo–Fr, ohne obige Feiertage).`;
+  }
+
+  async function sendChatMessage(){
+    const text = chatInput.value.trim();
+    if (!text) return;
+    if (!settings.apiKey){
+      showToast('Bitte zuerst Claude API-Schlüssel in den Einstellungen hinterlegen');
+      openSettings();
+      return;
+    }
+    chatHistory.push({ role: 'user', content: text });
+    saveChat(chatHistory);
+    chatInput.value = '';
+    chatInput.style.height = 'auto';
+    renderChat();
+
+    const typing = document.createElement('div');
+    typing.className = 'msg assistant';
+    typing.innerHTML = `<span class="typing-dots"><span></span><span></span><span></span></span>`;
+    chatMessages.appendChild(typing);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    $('chatSend').disabled = true;
+
+    try{
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          'x-api-key': settings.apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model: CHAT_MODEL,
+          max_tokens: 600,
+          system: buildSystemPrompt(),
+          messages: chatHistory.map(m => ({ role: m.role, content: m.content })),
+        }),
+      });
+      if (!res.ok){
+        const errText = await res.text();
+        throw new Error(`API-Fehler ${res.status}: ${errText.slice(0,180)}`);
+      }
+      const data = await res.json();
+      const reply = (data.content || []).map(c => c.text || '').join('').trim() || 'Keine Antwort erhalten.';
+      chatHistory.push({ role: 'assistant', content: reply });
+      saveChat(chatHistory);
+    } catch(err){
+      chatHistory.push({ role: 'assistant', content: `⚠ ${err.message}` });
+      saveChat(chatHistory);
+    } finally {
+      $('chatSend').disabled = false;
+      renderChat();
+    }
+  }
+
+  /* ---------------- Init ---------------- */
+  renderAll();
+})();
+</script>
+</body>
+</html>
