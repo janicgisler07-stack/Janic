@@ -152,6 +152,7 @@
   .btn-danger-text{ color:var(--rose-deep); background:transparent; padding:8px 10px; font-size:13px;}
   .btn-danger-text:hover{ text-decoration:underline; }
   .btn:disabled{opacity:0.45; cursor:not-allowed; transform:none !important;}
+  .btn-sm{padding:7px 12px; font-size:12.5px;}
 
   /* ---------- Stat grid ---------- */
   .stats-grid{
@@ -193,6 +194,7 @@
     font-size:30px;
     font-weight:500;
     line-height:1.1;
+    font-variant-numeric:tabular-nums;
   }
   .stat-value small{font-size:15px; font-weight:400; color:var(--ink-soft);}
   .stat-foot{font-size:12.5px; color:var(--ink-soft); margin-top:6px;}
@@ -235,6 +237,10 @@
   }
   select{cursor:pointer;}
   textarea{resize:vertical; min-height:70px; font-family:inherit;}
+  input:focus-visible, select:focus-visible, button:focus-visible, textarea:focus-visible{
+    outline:2px solid var(--slate-deep);
+    outline-offset:2px;
+  }
 
   /* ---------- Entries list ---------- */
   .entry-row{
@@ -254,11 +260,12 @@
   }
   .entry-main .title{font-weight:600; font-size:15px;}
   .entry-main .loc{font-size:13px; color:var(--ink-soft); margin-top:2px;}
-  .entry-dates{font-size:13.5px; color:var(--ink-soft); text-align:right; white-space:nowrap;}
+  .entry-dates{font-size:13.5px; color:var(--ink-soft); text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums;}
   .entry-workdays{
     font-size:13px; font-weight:600;
     background:var(--sage-tint); color:var(--sage-deep);
     padding:5px 11px; border-radius:999px; white-space:nowrap;
+    font-variant-numeric:tabular-nums;
   }
   .entry-actions{display:flex; gap:4px;}
   .entry-actions button{
@@ -322,6 +329,7 @@
     text-align:center;
     line-height:1.15;
     min-width:44px;
+    font-variant-numeric:tabular-nums;
   }
   .holiday-chip .date b{display:block; font-size:16px;}
   .holiday-chip .name{font-size:13.5px; font-weight:500;}
@@ -377,9 +385,29 @@
     font-weight:600;
     display:flex; justify-content:space-between; align-items:center;
     margin-bottom:18px;
+    font-variant-numeric:tabular-nums;
   }
   .modal-actions{display:flex; justify-content:flex-end; gap:10px; margin-top:6px;}
   .helptext{font-size:12px; color:var(--ink-faint); line-height:1.5;}
+
+  .year-row{
+    display:grid;
+    grid-template-columns:88px 1fr 34px;
+    gap:8px;
+    align-items:center;
+    margin-bottom:8px;
+  }
+  .year-row input{padding:8px 10px; font-size:13.5px;}
+  .removeYearRow{
+    width:34px;height:34px;
+    border-radius:50%;
+    border:none;background:transparent;
+    color:var(--ink-faint);
+    cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    transition:background 200ms var(--ease), color 200ms var(--ease);
+  }
+  .removeYearRow:hover{background:var(--rose-tint); color:var(--rose-deep);}
 
   /* ---------- Chat ---------- */
   .chat-toggle{
@@ -513,6 +541,10 @@
   }
   .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
 
+  @media (prefers-reduced-motion: reduce){
+    *{transition-duration:0.001ms !important; animation-duration:0.001ms !important;}
+  }
+
   @media (max-width:760px){
     .stats-grid{grid-template-columns:repeat(2,1fr);}
     .app{padding:32px 16px 120px;}
@@ -531,10 +563,10 @@
     <div>
       <div class="eyebrow">Kanton Uri · Lehrling</div>
       <h1>Ferienkalender</h1>
-      <div class="sub">Janic — Übersicht über Ferien, Saldo &amp; Feiertage</div>
+      <div class="sub">Janic — Lehrzeit bis 31.07.2027 · Ferien, Saldo &amp; Feiertage im Blick</div>
     </div>
     <div class="topbar-actions">
-      <button class="icon-btn" id="btnExportIcs" title="Als .ics exportieren">
+      <button class="icon-btn" id="btnExportIcs" title="Als .ics exportieren (Outlook-kompatibel)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 19h14"/></svg>
       </button>
       <button class="icon-btn" id="btnSettings" title="Einstellungen">
@@ -588,7 +620,7 @@
       </div>
     </div>
     <div class="holiday-grid" id="holidayList"></div>
-    <div class="holiday-note">Gesetzliche Feiertage des Kantons Uri (inkl. beweglicher Feiertage). Bitte bei wichtigen Planungen zusätzlich mit dem Lehrbetrieb abgleichen.</div>
+    <div class="holiday-note">Gesetzliche Feiertage des Kantons Uri 2026/2027. Bitte bei wichtigen Planungen zusätzlich mit dem Lehrbetrieb abgleichen.</div>
   </div>
 
   <footer class="app-footer">Ferienkalender · Janic · privat &amp; lokal gespeichert im Browser</footer>
@@ -604,12 +636,13 @@
       </button>
     </div>
     <div class="field">
-      <label>Jährlicher Anspruch (Tage)</label>
-      <input type="number" id="settingAnspruch" min="0" step="0.5">
-    </div>
-    <div class="field">
-      <label>Übertrag aus Vorjahr (Tage)</label>
-      <input type="number" id="settingCarryover" step="0.5">
+      <label>Ferienanspruch pro Jahr</label>
+      <div id="anspruchRows"></div>
+      <button class="btn btn-ghost btn-sm" id="addYearRow" type="button" style="align-self:flex-start;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        Jahr hinzufügen
+      </button>
+      <div class="helptext">Übertrag aus dem Vorjahr wird automatisch aus dem dortigen Restsaldo berechnet (z.B. Resttage 2026 fliessen in den Saldo 2027).</div>
     </div>
     <div class="field">
       <label>Claude API-Schlüssel (für KI-Chat)</label>
@@ -692,7 +725,7 @@
   </div>
   <div class="chat-messages" id="chatMessages"></div>
   <div class="chat-input-row">
-    <textarea id="chatInput" placeholder="Frag z. B. «Wie viele Ferientage habe ich noch?»" rows="1"></textarea>
+    <textarea id="chatInput" placeholder="Frag z. B. «Wie viele Ferientage habe ich 2027 noch?»" rows="1"></textarea>
     <button class="chat-send" id="chatSend">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
     </button>
@@ -705,33 +738,78 @@
 (function(){
   "use strict";
 
+  /* ================================================================
+     FEIERTAGE — Kanton Uri, hardcoded für 2026 & 2027
+     (Lehrzeit Janic endet 31.07.2027, daher genügen diese zwei Jahre)
+     ================================================================ */
+  const FEIERTAGE_LIST = [
+    { date:'2026-01-01', name:'Neujahr' },
+    { date:'2026-01-02', name:'Berchtoldstag' },
+    { date:'2026-03-19', name:'St. Josef' },
+    { date:'2026-04-03', name:'Karfreitag' },
+    { date:'2026-04-06', name:'Ostermontag' },
+    { date:'2026-05-14', name:'Auffahrt' },
+    { date:'2026-05-25', name:'Pfingstmontag' },
+    { date:'2026-06-04', name:'Fronleichnam' },
+    { date:'2026-08-01', name:'Bundesfeier' },
+    { date:'2026-08-15', name:'Mariä Himmelfahrt' },
+    { date:'2026-11-01', name:'Allerheiligen' },
+    { date:'2026-12-08', name:'Mariä Empfängnis' },
+    { date:'2026-12-25', name:'Weihnachten' },
+    { date:'2026-12-26', name:'Stephanstag' },
+    { date:'2027-01-01', name:'Neujahr' },
+    { date:'2027-01-02', name:'Berchtoldstag' },
+    { date:'2027-03-19', name:'St. Josef' },
+    { date:'2027-03-26', name:'Karfreitag' },
+    { date:'2027-03-29', name:'Ostermontag' },
+    { date:'2027-05-06', name:'Auffahrt' },
+    { date:'2027-05-17', name:'Pfingstmontag' },
+    { date:'2027-05-27', name:'Fronleichnam' },
+    { date:'2027-08-01', name:'Bundesfeier' },
+    { date:'2027-08-15', name:'Mariä Himmelfahrt' },
+    { date:'2027-11-01', name:'Allerheiligen' },
+    { date:'2027-12-08', name:'Mariä Empfängnis' },
+    { date:'2027-12-25', name:'Weihnachten' },
+    { date:'2027-12-26', name:'Stephanstag' },
+  ];
+  const FEIERTAGE = new Set(FEIERTAGE_LIST.map(h => h.date));
+
   /* ---------------- Storage ---------------- */
-  const LS_ENTRIES = 'jfk_entries_v1';
-  const LS_SETTINGS = 'jfk_settings_v1';
-  const LS_CHAT = 'jfk_chat_v1';
+  const STORAGE_KEY = 'janic-ferien-v4';
+  const LEHRZEIT_ENDE = '2027-07-31';
 
-  const defaultSettings = { anspruch: 25, carryover: 0, apiKey: '' };
+  const defaultState = {
+    entries: [
+      { id:'seed-sommer', title:'Sommerferien', location:'', type:'Ferien', start:'2026-07-06', end:'2026-07-21', note:'' },
+      { id:'seed-lissabon', title:'Lissabon', location:'Lissabon, Portugal', type:'Ferien', start:'2026-09-28', end:'2026-10-02', note:'' },
+      { id:'seed-weihnachten', title:'Weihnachtsferien', location:'', type:'Ferien', start:'2026-12-21', end:'2026-12-24', note:'' },
+      { id:'seed-ayianapa', title:'Ayia Napa', location:'Ayia Napa, Zypern', type:'Ferien', start:'2027-06-07', end:'2027-06-11', note:'' },
+    ],
+    anspruchByYear: { '2026': 32.28, '2027': 17.5 },
+    apiKey: '',
+    chat: [],
+  };
 
-  function loadEntries(){
-    try{ return JSON.parse(localStorage.getItem(LS_ENTRIES)) || []; }catch(e){ return []; }
+  function lsGet(key){ try{ return localStorage.getItem(key); }catch(e){ return null; } }
+  function lsSet(key, val){ try{ localStorage.setItem(key, val); }catch(e){ /* storage unavailable */ } }
+
+  function loadState(){
+    try{
+      const raw = JSON.parse(lsGet(STORAGE_KEY));
+      if (!raw) return JSON.parse(JSON.stringify(defaultState));
+      return {
+        entries: Array.isArray(raw.entries) ? raw.entries : defaultState.entries,
+        anspruchByYear: raw.anspruchByYear && typeof raw.anspruchByYear === 'object' ? raw.anspruchByYear : defaultState.anspruchByYear,
+        apiKey: typeof raw.apiKey === 'string' ? raw.apiKey : '',
+        chat: Array.isArray(raw.chat) ? raw.chat : [],
+      };
+    }catch(e){ return JSON.parse(JSON.stringify(defaultState)); }
   }
-  function saveEntries(list){ localStorage.setItem(LS_ENTRIES, JSON.stringify(list)); }
+  function saveState(){ lsSet(STORAGE_KEY, JSON.stringify(state)); }
 
-  function loadSettings(){
-    try{ return Object.assign({}, defaultSettings, JSON.parse(localStorage.getItem(LS_SETTINGS)) || {}); }
-    catch(e){ return Object.assign({}, defaultSettings); }
-  }
-  function saveSettings(s){ localStorage.setItem(LS_SETTINGS, JSON.stringify(s)); }
-
-  function loadChat(){
-    try{ return JSON.parse(localStorage.getItem(LS_CHAT)) || []; }catch(e){ return []; }
-  }
-  function saveChat(list){ localStorage.setItem(LS_CHAT, JSON.stringify(list)); }
-
-  let entries = loadEntries();
-  let settings = loadSettings();
-  let chatHistory = loadChat();
+  let state = loadState();
   let selectedYear = new Date().getFullYear();
+  if (!(String(selectedYear) in state.anspruchByYear)) selectedYear = 2026;
 
   /* ---------------- Date helpers ---------------- */
   function toISO(d){
@@ -750,102 +828,76 @@
     const sOpts = sameMonth ? {day:'2-digit'} : sameYear ? {day:'2-digit', month:'2-digit'} : {day:'2-digit', month:'2-digit', year:'numeric'};
     return `${s.toLocaleDateString('de-CH', sOpts)} – ${fmtShort(e)}`;
   }
-
-  function easterSunday(year){
-    const a = year % 19, b = Math.floor(year/100), c = year % 100;
-    const d = Math.floor(b/4), e = b % 4, f = Math.floor((b+8)/25);
-    const g = Math.floor((b-f+1)/3), h = (19*a + b - d - g + 15) % 30;
-    const i = Math.floor(c/4), k = c % 4, l = (32 + 2*e + 2*i - h - k) % 7;
-    const m = Math.floor((a + 11*h + 22*l)/451);
-    const month = Math.floor((h + l - 7*m + 114)/31);
-    const day = ((h + l - 7*m + 114) % 31) + 1;
-    return new Date(year, month-1, day);
-  }
-  function addDays(date, n){ const d = new Date(date); d.setDate(d.getDate()+n); return d; }
-
-  function getFeiertageUri(year){
-    const easter = easterSunday(year);
-    const list = [
-      { date: new Date(year,0,1), name: 'Neujahr' },
-      { date: new Date(year,0,2), name: 'Berchtoldstag' },
-      { date: new Date(year,2,19), name: 'St. Josef' },
-      { date: addDays(easter,-2), name: 'Karfreitag' },
-      { date: addDays(easter,1), name: 'Ostermontag' },
-      { date: addDays(easter,39), name: 'Auffahrt' },
-      { date: addDays(easter,50), name: 'Pfingstmontag' },
-      { date: addDays(easter,60), name: 'Fronleichnam' },
-      { date: new Date(year,7,1), name: 'Bundesfeier' },
-      { date: new Date(year,7,15), name: 'Mariä Himmelfahrt' },
-      { date: new Date(year,10,1), name: 'Allerheiligen' },
-      { date: new Date(year,11,8), name: 'Mariä Empfängnis' },
-      { date: new Date(year,11,25), name: 'Weihnachten' },
-      { date: new Date(year,11,26), name: 'Stephanstag' },
-    ];
-    return list.sort((a,b)=>a.date-b.date);
+  function fmtDays(n){
+    return (Math.round(n*100)/100).toString().replace('.', ',');
   }
 
-  function holidaySetForYears(years){
-    const set = new Set();
-    years.forEach(y => getFeiertageUri(y).forEach(h => set.add(toISO(h.date))));
-    return set;
-  }
-
-  function countWorkdays(startISO, endISO, holidaySet){
+  /* ---------------- Arbeitstage-Kalkulation ---------------- */
+  function countWorkdays(startISO, endISO){
     if (!startISO || !endISO) return 0;
     let start = parseISO(startISO), end = parseISO(endISO);
     if (end < start) return 0;
     let count = 0, d = new Date(start);
     while (d <= end){
       const day = d.getDay();
-      if (day !== 0 && day !== 6 && !holidaySet.has(toISO(d))) count++;
+      if (day !== 0 && day !== 6 && !FEIERTAGE.has(toISO(d))) count++;
       d.setDate(d.getDate()+1);
     }
     return count;
+  }
+
+  /* ---------------- Saldo (pro Jahr, mit automatischem Übertrag) ---------------- */
+  function workdaysUsed(year){
+    return state.entries
+      .filter(e => e.type === 'Ferien' && parseISO(e.start).getFullYear() === year)
+      .reduce((sum,e) => sum + countWorkdays(e.start, e.end), 0);
+  }
+  function anspruchFor(year){ return Number(state.anspruchByYear[String(year)]) || 0; }
+  function carryoverFor(year){
+    const prevYear = year - 1;
+    if (!(String(prevYear) in state.anspruchByYear)) return 0;
+    return Math.max(0, saldoFor(prevYear));
+  }
+  function saldoFor(year){
+    return anspruchFor(year) + carryoverFor(year) - workdaysUsed(year);
   }
 
   /* ---------------- Rendering ---------------- */
   const $ = id => document.getElementById(id);
 
   function yearsInUse(){
-    const now = new Date().getFullYear();
-    const set = new Set([now-1, now, now+1, now+2]);
-    entries.forEach(e => set.add(parseISO(e.start).getFullYear()));
+    const set = new Set(Object.keys(state.anspruchByYear).map(Number));
+    state.entries.forEach(e => set.add(parseISO(e.start).getFullYear()));
     return Array.from(set).sort((a,b)=>a-b);
   }
 
   function populateYearSelects(){
     const years = yearsInUse();
-    const now = new Date().getFullYear();
-    if (!years.includes(selectedYear)) selectedYear = now;
+    if (!years.includes(selectedYear)) selectedYear = years[0];
 
     for (const sel of [$('yearFilter'), $('holidayYear')]){
       const prev = sel.id === 'yearFilter' ? selectedYear : (Number(sel.value) || selectedYear);
       sel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
-      sel.value = prev;
+      if (years.includes(prev)) sel.value = prev; else sel.value = years[0];
     }
   }
 
   function renderStats(){
-    const holSet = holidaySetForYears([selectedYear]);
-    const yearEntries = entries.filter(e => parseISO(e.start).getFullYear() === selectedYear);
-    const verwendet = yearEntries
-      .filter(e => e.type === 'Ferien')
-      .reduce((sum,e) => sum + countWorkdays(e.start, e.end, holSet), 0);
-    const anspruch = Number(settings.anspruch) || 0;
-    const carryover = Number(settings.carryover) || 0;
-    const totalAnspruch = anspruch + carryover;
-    const saldo = totalAnspruch - verwendet;
+    const verwendet = workdaysUsed(selectedYear);
+    const anspruch = anspruchFor(selectedYear);
+    const carryover = carryoverFor(selectedYear);
+    const saldo = saldoFor(selectedYear);
 
     $('statYearA').textContent = `· ${selectedYear}`;
-    $('statAnspruch').innerHTML = `${totalAnspruch}<small> Tage</small>`;
-    $('statAnspruchFoot').textContent = carryover ? `${anspruch} + ${carryover} Übertrag` : 'Jahresanspruch';
-    $('statVerwendet').innerHTML = `${verwendet}<small> Tage</small>`;
-    $('statVerwendetFoot').textContent = `${yearEntries.filter(e=>e.type==='Ferien').length} Ferien-Einträge`;
-    $('statSaldo').innerHTML = `${saldo}<small> Tage</small>`;
+    $('statAnspruch').innerHTML = `${fmtDays(anspruch + carryover)}<small> Tage</small>`;
+    $('statAnspruchFoot').textContent = carryover > 0 ? `${fmtDays(anspruch)} + ${fmtDays(carryover)} Übertrag ${selectedYear-1}` : 'Jahresanspruch';
+    $('statVerwendet').innerHTML = `${fmtDays(verwendet)}<small> Tage</small>`;
+    $('statVerwendetFoot').textContent = `${state.entries.filter(e=>e.type==='Ferien' && parseISO(e.start).getFullYear()===selectedYear).length} Ferien-Einträge`;
+    $('statSaldo').innerHTML = `${fmtDays(saldo)}<small> Tage</small>`;
     $('statSaldo').parentElement.style.setProperty('--accent', saldo < 0 ? 'var(--rose)' : 'var(--slate)');
 
     const today = toISO(new Date());
-    const upcoming = entries
+    const upcoming = state.entries
       .filter(e => e.type === 'Ferien' && e.end >= today)
       .sort((a,b) => a.start.localeCompare(b.start))[0];
     if (upcoming){
@@ -862,8 +914,7 @@
   const typeDot = { Ferien: 'var(--sage)', Krankheit: 'var(--rose)', Sonstiges: 'var(--sand)' };
 
   function renderEntries(){
-    const holSet = holidaySetForYears([selectedYear-1, selectedYear, selectedYear+1]);
-    const list = entries
+    const list = state.entries
       .filter(e => parseISO(e.start).getFullYear() === selectedYear)
       .sort((a,b) => a.start.localeCompare(b.start));
 
@@ -872,13 +923,13 @@
       container.innerHTML = `<div class="empty-state">
         <div class="glyph">◌</div>
         <p>Noch keine Einträge für ${selectedYear}.</p>
-        <p>Füge deine erste Ferien, z. B. nach Lissabon oder Ayia Napa, hinzu.</p>
+        <p>Füge deine nächsten Ferien hinzu.</p>
       </div>`;
       return;
     }
 
     container.innerHTML = list.map(e => {
-      const wd = countWorkdays(e.start, e.end, holSet);
+      const wd = countWorkdays(e.start, e.end);
       return `<div class="entry-row" data-id="${e.id}">
         <div class="entry-dot" style="--dot:${typeDot[e.type]||'var(--sage)'}"></div>
         <div class="entry-main">
@@ -886,7 +937,7 @@
           <div class="loc">${e.location ? escapeHtml(e.location) : '&nbsp;'}</div>
         </div>
         <div class="entry-dates">${fmtRange(e.start, e.end)}</div>
-        <div class="entry-workdays">${wd} AT</div>
+        <div class="entry-workdays">${fmtDays(wd)} AT</div>
         <div class="entry-actions">
           <button class="edit" data-action="edit" title="Bearbeiten">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
@@ -901,12 +952,13 @@
 
   function renderHolidays(){
     const y = Number($('holidayYear').value) || selectedYear;
-    const list = getFeiertageUri(y);
+    const list = FEIERTAGE_LIST.filter(h => h.date.startsWith(String(y)));
     $('holidayList').innerHTML = list.map(h => {
-      const wd = h.date.toLocaleDateString('de-CH', { weekday:'short' });
-      const isWeekend = h.date.getDay() === 0 || h.date.getDay() === 6;
+      const d = parseISO(h.date);
+      const wd = d.toLocaleDateString('de-CH', { weekday:'short' });
+      const isWeekend = d.getDay() === 0 || d.getDay() === 6;
       return `<div class="holiday-chip">
-        <div class="date">${wd}<b>${String(h.date.getDate()).padStart(2,'0')}.${String(h.date.getMonth()+1).padStart(2,'0')}</b></div>
+        <div class="date">${wd}<b>${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}</b></div>
         <div>
           <div class="name">${h.name}</div>
           <div class="wd">${isWeekend ? 'fällt auf Wochenende' : 'arbeitsfrei'}</div>
@@ -941,10 +993,40 @@
   $('holidayYear').addEventListener('change', renderHolidays);
 
   /* ---------------- Settings modal ---------------- */
+  function renderAnspruchRows(){
+    const years = Object.keys(state.anspruchByYear).map(Number).sort((a,b)=>a-b);
+    $('anspruchRows').innerHTML = years.map(y => `
+      <div class="year-row" data-year="${y}">
+        <input type="number" class="yearInput" value="${y}" step="1">
+        <input type="number" class="anspruchInput" value="${state.anspruchByYear[y]}" step="0.01" min="0">
+        <button class="removeYearRow" type="button" title="Jahr entfernen">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>`).join('');
+  }
+  $('anspruchRows').addEventListener('click', e => {
+    const btn = e.target.closest('.removeYearRow');
+    if (!btn) return;
+    btn.closest('.year-row').remove();
+  });
+  $('addYearRow').addEventListener('click', () => {
+    const rows = $('anspruchRows');
+    const existingYears = Array.from(rows.querySelectorAll('.yearInput')).map(i => Number(i.value));
+    const nextYear = existingYears.length ? Math.max(...existingYears) + 1 : new Date().getFullYear();
+    const row = document.createElement('div');
+    row.className = 'year-row';
+    row.innerHTML = `
+      <input type="number" class="yearInput" value="${nextYear}" step="1">
+      <input type="number" class="anspruchInput" value="0" step="0.01" min="0">
+      <button class="removeYearRow" type="button" title="Jahr entfernen">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>`;
+    rows.appendChild(row);
+  });
+
   function openSettings(){
-    $('settingAnspruch').value = settings.anspruch;
-    $('settingCarryover').value = settings.carryover;
-    $('settingApiKey').value = settings.apiKey;
+    renderAnspruchRows();
+    $('settingApiKey').value = state.apiKey;
     $('settingsBackdrop').classList.add('open');
   }
   function closeSettings(){ $('settingsBackdrop').classList.remove('open'); }
@@ -953,20 +1035,22 @@
   $('cancelSettings').addEventListener('click', closeSettings);
   $('settingsBackdrop').addEventListener('click', e => { if (e.target === $('settingsBackdrop')) closeSettings(); });
   $('saveSettings').addEventListener('click', () => {
-    settings = {
-      anspruch: Number($('settingAnspruch').value) || 0,
-      carryover: Number($('settingCarryover').value) || 0,
-      apiKey: $('settingApiKey').value.trim(),
-    };
-    saveSettings(settings);
+    const newMap = {};
+    $('anspruchRows').querySelectorAll('.year-row').forEach(row => {
+      const y = Number(row.querySelector('.yearInput').value);
+      const a = Number(row.querySelector('.anspruchInput').value);
+      if (y) newMap[String(y)] = a || 0;
+    });
+    if (Object.keys(newMap).length === 0){ showToast('Mindestens ein Jahr wird benötigt'); return; }
+    state.anspruchByYear = newMap;
+    state.apiKey = $('settingApiKey').value.trim();
+    saveState();
     closeSettings();
     renderAll();
     showToast('Einstellungen gespeichert');
   });
 
   /* ---------------- Entry modal ---------------- */
-  const holSetAllRelevant = () => holidaySetForYears([selectedYear-1, selectedYear, selectedYear+1, selectedYear+2]);
-
   function openEntryModal(entry){
     $('entryModalTitle').textContent = entry ? 'Eintrag bearbeiten' : 'Neuer Eintrag';
     $('entryId').value = entry ? entry.id : '';
@@ -985,8 +1069,8 @@
 
   function updateWorkdaysPreview(){
     const s = $('entryStart').value, e = $('entryEnd').value;
-    const wd = countWorkdays(s, e, holSetAllRelevant());
-    $('workdaysPreview').textContent = `${wd} Tag${wd===1?'':'e'}`;
+    const wd = countWorkdays(s, e);
+    $('workdaysPreview').textContent = `${fmtDays(wd)} Tag${wd===1?'':'e'}`;
   }
   $('entryStart').addEventListener('change', () => {
     if ($('entryEnd').value < $('entryStart').value) $('entryEnd').value = $('entryStart').value;
@@ -1016,11 +1100,11 @@
       note: $('entryNote').value.trim(),
     };
     if (id){
-      entries = entries.map(e => e.id === id ? data : e);
+      state.entries = state.entries.map(e => e.id === id ? data : e);
     } else {
-      entries.push(data);
+      state.entries.push(data);
     }
-    saveEntries(entries);
+    saveState();
     closeEntryModal();
     selectedYear = parseISO(start).getFullYear();
     renderAll();
@@ -1030,8 +1114,8 @@
   $('deleteEntryBtn').addEventListener('click', () => {
     const id = $('entryId').value;
     if (!id) return;
-    entries = entries.filter(e => e.id !== id);
-    saveEntries(entries);
+    state.entries = state.entries.filter(e => e.id !== id);
+    saveState();
     closeEntryModal();
     renderAll();
     showToast('Eintrag gelöscht');
@@ -1042,13 +1126,13 @@
     if (!btn) return;
     const row = e.target.closest('.entry-row');
     const id = row.dataset.id;
-    const entry = entries.find(x => x.id === id);
+    const entry = state.entries.find(x => x.id === id);
     if (btn.dataset.action === 'edit'){
       openEntryModal(entry);
     } else if (btn.dataset.action === 'delete'){
       if (confirm(`«${entry.title}» wirklich löschen?`)){
-        entries = entries.filter(x => x.id !== id);
-        saveEntries(entries);
+        state.entries = state.entries.filter(x => x.id !== id);
+        saveState();
         renderAll();
         showToast('Eintrag gelöscht');
       }
@@ -1060,7 +1144,7 @@
     if (e.key === 'Escape'){ closeEntryModal(); closeSettings(); }
   });
 
-  /* ---------------- ICS export ---------------- */
+  /* ---------------- ICS Export (Outlook-kompatibel) ---------------- */
   function pad(n){ return String(n).padStart(2,'0'); }
   function icsDate(iso){ return iso.replaceAll('-',''); }
   function icsDatePlusOne(iso){
@@ -1068,16 +1152,15 @@
     return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}`;
   }
   function foldLine(line){
-    // simple escape for ICS text
-    return line.replace(/([,;])/g, '\\$1');
+    return String(line).replace(/([,;])/g, '\\$1');
   }
 
   $('btnExportIcs').addEventListener('click', () => {
-    if (entries.length === 0){ showToast('Keine Einträge zum Exportieren'); return; }
+    if (state.entries.length === 0){ showToast('Keine Einträge zum Exportieren'); return; }
     const now = new Date();
     const stamp = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}T${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}Z`;
-    const lines = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Janic//Ferienkalender//DE','CALSCALE:GREGORIAN'];
-    entries.forEach(e => {
+    const lines = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Janic//Ferienkalender//DE','CALSCALE:GREGORIAN','METHOD:PUBLISH'];
+    state.entries.forEach(e => {
       lines.push('BEGIN:VEVENT');
       lines.push(`UID:${e.id}@ferienkalender-janic`);
       lines.push(`DTSTAMP:${stamp}`);
@@ -1086,6 +1169,7 @@
       lines.push(`SUMMARY:${foldLine(e.title + (e.location ? ' – ' + e.location : ''))}`);
       if (e.note) lines.push(`DESCRIPTION:${foldLine(e.note)}`);
       lines.push(`CATEGORIES:${e.type}`);
+      lines.push('TRANSP:TRANSPARENT');
       lines.push('END:VEVENT');
     });
     lines.push('END:VCALENDAR');
@@ -1101,7 +1185,7 @@
     showToast('ICS-Datei exportiert');
   });
 
-  /* ---------------- Chat ---------------- */
+  /* ---------------- Chat (Claude Sonnet 4.6) ---------------- */
   const CHAT_MODEL = 'claude-sonnet-4-6';
   const chatPanel = $('chatPanel');
   const chatMessages = $('chatMessages');
@@ -1109,11 +1193,11 @@
 
   function renderChat(){
     chatMessages.innerHTML = '';
-    if (chatHistory.length === 0){
+    if (state.chat.length === 0){
       chatMessages.innerHTML = `<div class="msg system-note">Frag mich etwas zu deinem Ferien-Saldo, Arbeitstagen oder Feiertagen in Uri.</div>`;
       return;
     }
-    chatHistory.forEach(m => {
+    state.chat.forEach(m => {
       const div = document.createElement('div');
       div.className = 'msg ' + (m.role === 'user' ? 'user' : 'assistant');
       div.textContent = m.content;
@@ -1136,40 +1220,48 @@
   });
   $('chatSend').addEventListener('click', sendChatMessage);
 
-  function buildSystemPrompt(){
-    const holSet = holidaySetForYears([selectedYear]);
-    const yearEntries = entries.filter(e => parseISO(e.start).getFullYear() === selectedYear);
-    const verwendet = yearEntries.filter(e => e.type === 'Ferien').reduce((s,e)=>s+countWorkdays(e.start,e.end,holSet),0);
-    const anspruch = Number(settings.anspruch)||0, carryover = Number(settings.carryover)||0;
-    const saldo = anspruch + carryover - verwendet;
-    const entriesList = entries.map(e => `- ${e.title}${e.location? ' ('+e.location+')':''}: ${e.start} bis ${e.end}, Typ ${e.type}`).join('\n') || 'Keine Einträge vorhanden.';
-    const holidaysList = getFeiertageUri(selectedYear).map(h => `- ${toISO(h.date)}: ${h.name}`).join('\n');
-    return `Du bist ein freundlicher, präziser Ferien-Assistent für Janic, einen Lehrling im Kanton Uri, Schweiz. Antworte kurz, auf Deutsch (Schweizer Hochdeutsch), duze Janic.
+  // Baut den System-Prompt LIVE bei jedem Aufruf neu auf, damit der Saldo
+  // immer den aktuellen Stand (inkl. gerade erst gespeicherter Einträge) widerspiegelt.
+  function buildSystem(){
+    const years = yearsInUse();
+    const saldoTable = years.map(y => {
+      return `- ${y}: Anspruch ${fmtDays(anspruchFor(y))} Tage${carryoverFor(y) > 0 ? ' + ' + fmtDays(carryoverFor(y)) + ' Übertrag' : ''}, bezogen ${fmtDays(workdaysUsed(y))} Tage, Saldo ${fmtDays(saldoFor(y))} Tage`;
+    }).join('\n');
+    const entriesList = state.entries
+      .slice()
+      .sort((a,b) => a.start.localeCompare(b.start))
+      .map(e => `- ${e.title}${e.location ? ' (' + e.location + ')' : ''}: ${e.start} bis ${e.end}, Typ ${e.type}, ${fmtDays(countWorkdays(e.start,e.end))} Arbeitstage`)
+      .join('\n') || 'Keine Einträge vorhanden.';
+    const relevantHolidays = FEIERTAGE_LIST.filter(h => h.date.startsWith(String(selectedYear)))
+      .map(h => `- ${h.date}: ${h.name}`).join('\n');
 
-Aktueller Stand für das Jahr ${selectedYear}:
-- Jahresanspruch: ${anspruch} Tage, Übertrag: ${carryover} Tage
-- Bereits bezogen: ${verwendet} Arbeitstage
-- Saldo (verbleibend): ${saldo} Tage
+    return `Du bist ein freundlicher, präziser Ferien-Assistent für Janic, Lehrling im Kanton Uri, Schweiz (Lehrzeit bis ${LEHRZEIT_ENDE}). Antworte kurz, auf Deutsch (Schweizer Hochdeutsch), duze Janic.
 
-Einträge:
+Heutiges Datum: ${toISO(new Date())}
+Aktuell ausgewähltes Jahr in der App: ${selectedYear}
+
+Saldo pro Jahr (live berechnet, Übertrag ist bereits eingerechnet):
+${saldoTable}
+
+Alle Einträge:
 ${entriesList}
 
 Gesetzliche Feiertage Kanton Uri ${selectedYear}:
-${holidaysList}
+${relevantHolidays}
 
-Nutze diese Daten für Berechnungen und Auskünfte. Rechne bei Bedarf Arbeitstage selbst nach (Mo–Fr, ohne obige Feiertage).`;
+Nutze ausschliesslich diese Live-Daten für Berechnungen und Auskünfte — sie sind bei jeder Nachricht aktuell. Rechne bei Bedarf Arbeitstage selbst nach (Mo–Fr, ohne obige Feiertage).`;
   }
 
   async function sendChatMessage(){
     const text = chatInput.value.trim();
     if (!text) return;
-    if (!settings.apiKey){
+    if (!state.apiKey){
       showToast('Bitte zuerst Claude API-Schlüssel in den Einstellungen hinterlegen');
       openSettings();
       return;
     }
-    chatHistory.push({ role: 'user', content: text });
-    saveChat(chatHistory);
+    state.chat.push({ role: 'user', content: text });
+    saveState();
     chatInput.value = '';
     chatInput.style.height = 'auto';
     renderChat();
@@ -1182,19 +1274,21 @@ Nutze diese Daten für Berechnungen und Auskünfte. Rechne bei Bedarf Arbeitstag
     $('chatSend').disabled = true;
 
     try{
+      // buildSystem() wird HIER, direkt vor dem Senden, neu aufgerufen —
+      // jede Nachricht bekommt so garantiert den aktuellen Saldo-Stand.
       const res = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
           'content-type': 'application/json',
-          'x-api-key': settings.apiKey,
+          'x-api-key': state.apiKey,
           'anthropic-version': '2023-06-01',
           'anthropic-dangerous-direct-browser-access': 'true',
         },
         body: JSON.stringify({
           model: CHAT_MODEL,
-          max_tokens: 600,
-          system: buildSystemPrompt(),
-          messages: chatHistory.map(m => ({ role: m.role, content: m.content })),
+          max_tokens: 700,
+          system: buildSystem(),
+          messages: state.chat.map(m => ({ role: m.role, content: m.content })),
         }),
       });
       if (!res.ok){
@@ -1203,11 +1297,15 @@ Nutze diese Daten für Berechnungen und Auskünfte. Rechne bei Bedarf Arbeitstag
       }
       const data = await res.json();
       const reply = (data.content || []).map(c => c.text || '').join('').trim() || 'Keine Antwort erhalten.';
-      chatHistory.push({ role: 'assistant', content: reply });
-      saveChat(chatHistory);
+      state.chat.push({ role: 'assistant', content: reply });
+      saveState();
     } catch(err){
-      chatHistory.push({ role: 'assistant', content: `⚠ ${err.message}` });
-      saveChat(chatHistory);
+      const blocked = err instanceof TypeError;
+      const msg = blocked
+        ? 'Netzwerkzugriff nicht möglich (offline oder blockiert). Bitte Internetverbindung und API-Schlüssel prüfen.'
+        : err.message;
+      state.chat.push({ role: 'assistant', content: `⚠ ${msg}` });
+      saveState();
     } finally {
       $('chatSend').disabled = false;
       renderChat();
