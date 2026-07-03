@@ -649,6 +649,15 @@
       <input type="password" id="settingApiKey" placeholder="sk-ant-...">
       <div class="helptext">Wird nur lokal in deinem Browser gespeichert (localStorage) und ausschliesslich für Anfragen an die Anthropic API verwendet.</div>
     </div>
+    <div class="field">
+      <label>Geräte-Synchronisierung (GitHub Gist)</label>
+      <input type="password" id="settingGithubToken" placeholder="ghp_... (Token nur mit 'gist'-Berechtigung)">
+      <div class="helptext">Auf github.com unter Settings → Developer settings → Personal access tokens → Tokens (classic) einen neuen Token erstellen, dabei <strong>nur</strong> die Checkbox „gist” aktivieren. Trägst du denselben Token auf mehreren Geräten ein, siehst du dort automatisch die gleichen Einträge.</div>
+      <div class="row" style="margin-top:8px; gap:10px; align-items:center;">
+        <button class="btn btn-ghost btn-sm" id="syncNowBtn" type="button">Jetzt synchronisieren</button>
+        <span class="helptext" id="syncStatus" style="margin:0;">Noch nicht synchronisiert</span>
+      </div>
+    </div>
     <div class="modal-actions">
       <button class="btn btn-text" id="cancelSettings">Abbrechen</button>
       <button class="btn btn-primary" id="saveSettings">Speichern</button>
@@ -788,6 +797,7 @@
     anspruchByYear: { '2026': 32.28, '2027': 17.5 },
     apiKey: '',
     chat: [],
+    updatedAt: '1970-01-01T00:00:00.000Z',
   };
 
   function lsGet(key){ try{ return localStorage.getItem(key); }catch(e){ return null; } }
@@ -802,10 +812,126 @@
         anspruchByYear: raw.anspruchByYear && typeof raw.anspruchByYear === 'object' ? raw.anspruchByYear : defaultState.anspruchByYear,
         apiKey: typeof raw.apiKey === 'string' ? raw.apiKey : '',
         chat: Array.isArray(raw.chat) ? raw.chat : [],
+        updatedAt: typeof raw.updatedAt === 'string' ? raw.updatedAt : defaultState.updatedAt,
       };
     }catch(e){ return JSON.parse(JSON.stringify(defaultState)); }
   }
-  function saveState(){ lsSet(STORAGE_KEY, JSON.stringify(state)); }
+  function saveState(opts){
+    opts = opts || {};
+    if (opts.bumpUpdatedAt !== false) state.updatedAt = new Date().toISOString();
+    lsSet(STORAGE_KEY, JSON.stringify(state));
+    if (opts.sync !== false) syncPush();
+  }
+
+  /* ---------------- Geräte-Sync (privater GitHub Gist) ---------------- */
+  const SYNC_LOCAL_KEY = 'janic-ferien-v4-sync-local';
+  const SYNC_FILENAME = 'ferienkalender-janic-sync.json';
+
+  function loadSyncConfig(){
+    try{
+      const raw = JSON.parse(lsGet(SYNC_LOCAL_KEY));
+      return { token: (raw && raw.token) || '', gistId: (raw && raw.gistId) || '' };
+    }catch(e){ return { token: '', gistId: '' }; }
+  }
+  function saveSyncConfig(cfg){ lsSet(SYNC_LOCAL_KEY, JSON.stringify(cfg)); }
+
+  let syncConfig = loadSyncConfig();
+  let syncInFlight = false;
+
+  function syncPayloadFromState(){
+    return { entries: state.entries, anspruchByYear: state.anspruchByYear, updatedAt: state.updatedAt };
+  }
+  function applySyncPayload(payload){
+    if (Array.isArray(payload.entries)) state.entries = payload.entries;
+    if (payload.anspruchByYear && typeof payload.anspruchByYear === 'object') state.anspruchByYear = payload.anspruchByYear;
+    if (typeof payload.updatedAt === 'string') state.updatedAt = payload.updatedAt;
+    lsSet(STORAGE_KEY, JSON.stringify(state));
+  }
+
+  async function ghFetch(path, options){
+    const res = await fetch('https://api.github.com' + path, Object.assign({}, options, {
+      headers: Object.assign({
+        'Accept': 'application/vnd.github+json',
+        'Authorization': 'Bearer ' + syncConfig.token,
+      }, (options && options.headers) || {}),
+    }));
+    if (!res.ok){
+      const body = await res.text();
+      throw new Error(`GitHub-API-Fehler ${res.status}: ${body.slice(0,150)}`);
+    }
+    return res.status === 204 ? null : res.json();
+  }
+
+  async function findOrCreateGist(){
+    if (syncConfig.gistId) return syncConfig.gistId;
+    const gists = await ghFetch('/gists?per_page=100');
+    const found = gists.find(g => g.files && g.files[SYNC_FILENAME]);
+    if (found){
+      syncConfig.gistId = found.id;
+      saveSyncConfig(syncConfig);
+      return found.id;
+    }
+    const created = await ghFetch('/gists', {
+      method: 'POST',
+      body: JSON.stringify({
+        description: 'Ferienkalender Janic — Sync-Daten (nicht manuell bearbeiten)',
+        public: false,
+        files: { [SYNC_FILENAME]: { content: JSON.stringify(syncPayloadFromState(), null, 2) } },
+      }),
+    });
+    syncConfig.gistId = created.id;
+    saveSyncConfig(syncConfig);
+    return created.id;
+  }
+
+  function setSyncStatus(text){
+    const el = document.getElementById('syncStatus');
+    if (el) el.textContent = text;
+  }
+
+  async function syncPull(){
+    if (!syncConfig.token) return false;
+    try{
+      const gistId = await findOrCreateGist();
+      const gist = await ghFetch('/gists/' + gistId);
+      const file = gist.files && gist.files[SYNC_FILENAME];
+      if (!file || !file.content) return false;
+      const remote = JSON.parse(file.content);
+      if (remote.updatedAt && remote.updatedAt > state.updatedAt){
+        applySyncPayload(remote);
+        return true;
+      }
+      return false;
+    }catch(e){
+      setSyncStatus('Sync-Fehler: ' + e.message);
+      return false;
+    }
+  }
+
+  async function syncPush(){
+    if (!syncConfig.token || syncInFlight) return;
+    syncInFlight = true;
+    try{
+      const gistId = await findOrCreateGist();
+      await ghFetch('/gists/' + gistId, {
+        method: 'PATCH',
+        body: JSON.stringify({ files: { [SYNC_FILENAME]: { content: JSON.stringify(syncPayloadFromState(), null, 2) } } }),
+      });
+      setSyncStatus('Zuletzt synchronisiert: ' + new Date().toLocaleTimeString('de-CH', {hour:'2-digit', minute:'2-digit'}));
+    }catch(e){
+      setSyncStatus('Sync-Fehler: ' + e.message);
+    }finally{
+      syncInFlight = false;
+    }
+  }
+
+  async function syncNow(){
+    if (!syncConfig.token){ setSyncStatus('Kein Token hinterlegt'); return; }
+    setSyncStatus('Synchronisiere...');
+    const changed = await syncPull();
+    await syncPush();
+    if (changed) renderAll();
+  }
 
   let state = loadState();
   let selectedYear = new Date().getFullYear();
@@ -1027,6 +1153,8 @@
   function openSettings(){
     renderAnspruchRows();
     $('settingApiKey').value = state.apiKey;
+    $('settingGithubToken').value = syncConfig.token;
+    setSyncStatus(syncConfig.token ? 'Bereit' : 'Noch nicht synchronisiert');
     $('settingsBackdrop').classList.add('open');
   }
   function closeSettings(){ $('settingsBackdrop').classList.remove('open'); }
@@ -1034,6 +1162,15 @@
   $('closeSettings').addEventListener('click', closeSettings);
   $('cancelSettings').addEventListener('click', closeSettings);
   $('settingsBackdrop').addEventListener('click', e => { if (e.target === $('settingsBackdrop')) closeSettings(); });
+  $('syncNowBtn').addEventListener('click', () => {
+    const newToken = $('settingGithubToken').value.trim();
+    if (newToken !== syncConfig.token){
+      syncConfig.token = newToken;
+      syncConfig.gistId = ''; // Token gewechselt: Gist neu suchen/erstellen
+      saveSyncConfig(syncConfig);
+    }
+    syncNow();
+  });
   $('saveSettings').addEventListener('click', () => {
     const newMap = {};
     $('anspruchRows').querySelectorAll('.year-row').forEach(row => {
@@ -1044,6 +1181,12 @@
     if (Object.keys(newMap).length === 0){ showToast('Mindestens ein Jahr wird benötigt'); return; }
     state.anspruchByYear = newMap;
     state.apiKey = $('settingApiKey').value.trim();
+    const newToken = $('settingGithubToken').value.trim();
+    if (newToken !== syncConfig.token){
+      syncConfig.token = newToken;
+      syncConfig.gistId = '';
+      saveSyncConfig(syncConfig);
+    }
     saveState();
     closeSettings();
     renderAll();
@@ -1314,6 +1457,13 @@ Nutze ausschliesslich diese Live-Daten für Berechnungen und Auskünfte — sie 
 
   /* ---------------- Init ---------------- */
   renderAll();
+  if (syncConfig.token){
+    setSyncStatus('Synchronisiere...');
+    syncPull().then(changed => {
+      setSyncStatus('Zuletzt synchronisiert: ' + new Date().toLocaleTimeString('de-CH', {hour:'2-digit', minute:'2-digit'}));
+      if (changed) renderAll();
+    });
+  }
 })();
 </script>
 </body>
